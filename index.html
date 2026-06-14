@@ -1,0 +1,728 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Fretboard Notes</title>
+
+  <style>
+    :root {
+      --bg: #061426;
+      --bg2: #0b2240;
+      --ink: #e9f7ff;
+      --muted: #9fb8d0;
+      --border: rgba(120, 220, 255, 0.28);
+
+      --neon-blue: #00c8ff;
+      --neon-pink: #ff2d75;
+      --neon-green: #00f5d4;
+      --neon-purple: #9b5cff;
+      --neon-yellow: #f8f32b;
+
+      --cell: rgba(255, 255, 255, 0.045);
+      --cell-alt: rgba(0, 200, 255, 0.055);
+      --string-line: rgba(142, 233, 255, 0.62);
+      --fret-line: rgba(159, 184, 208, 0.32);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(0, 200, 255, 0.24), transparent 30%),
+        radial-gradient(circle at top right, rgba(255, 45, 117, 0.18), transparent 28%),
+        radial-gradient(circle at bottom, rgba(155, 92, 255, 0.2), transparent 36%),
+        linear-gradient(135deg, var(--bg), var(--bg2));
+    }
+
+    header {
+      max-width: 1400px;
+      margin: 0 auto 24px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      letter-spacing: -0.04em;
+      text-shadow:
+        0 0 8px rgba(0, 200, 255, 0.9),
+        0 0 22px rgba(0, 200, 255, 0.45),
+        0 0 36px rgba(255, 45, 117, 0.26);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    main {
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin: 24px auto;
+      padding: 16px;
+      background: rgba(13, 35, 65, 0.7);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow:
+        0 0 18px rgba(0, 200, 255, 0.12),
+        inset 0 0 18px rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(8px);
+    }
+
+    .control-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .control-label {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-right: 2px;
+    }
+
+    button,
+    select {
+      border: 1px solid rgba(0, 200, 255, 0.42);
+      background: rgba(7, 21, 38, 0.86);
+      color: var(--ink);
+      padding: 8px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      box-shadow: 0 0 10px rgba(0, 200, 255, 0.12);
+      transition: 0.2s ease;
+      outline: none;
+    }
+
+    select {
+      border-radius: 12px;
+    }
+
+    button:hover,
+    select:hover {
+      background: rgba(0, 200, 255, 0.15);
+      border-color: rgba(0, 245, 212, 0.8);
+      box-shadow:
+        0 0 10px rgba(0, 245, 212, 0.34),
+        0 0 22px rgba(0, 200, 255, 0.18);
+    }
+
+    button.active {
+      background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.5);
+      box-shadow:
+        0 0 12px rgba(0, 200, 255, 0.68),
+        0 0 28px rgba(155, 92, 255, 0.4);
+    }
+
+    .info-box {
+      background: rgba(15, 41, 71, 0.72);
+      border: 1px solid rgba(0, 245, 212, 0.35);
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 22px;
+      color: var(--muted);
+      line-height: 1.55;
+      box-shadow:
+        0 0 14px rgba(0, 245, 212, 0.14),
+        inset 0 0 18px rgba(0, 200, 255, 0.04);
+    }
+
+    .info-box strong {
+      color: var(--ink);
+    }
+
+    .fretboard-card {
+      background:
+        linear-gradient(145deg, rgba(16, 47, 85, 0.9), rgba(8, 24, 45, 0.96));
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow:
+        0 0 22px rgba(0, 200, 255, 0.14),
+        0 0 44px rgba(155, 92, 255, 0.08),
+        inset 0 0 18px rgba(255, 255, 255, 0.03);
+      overflow: hidden;
+    }
+
+    .fretboard-title-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.45rem;
+      color: var(--ink);
+      text-shadow: 0 0 12px rgba(0, 245, 212, 0.42);
+    }
+
+    .tuning-text {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .scroll-hint {
+      color: var(--muted);
+      font-size: 0.86rem;
+      margin-bottom: 12px;
+    }
+
+    .fretboard-scroll {
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .fretboard-scroll::-webkit-scrollbar {
+      height: 10px;
+    }
+
+    .fretboard-scroll::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+    }
+
+    .fretboard-scroll::-webkit-scrollbar-thumb {
+      background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+      border-radius: 999px;
+    }
+
+    .fretboard {
+      display: grid;
+      width: max-content;
+      border: 1px solid rgba(142, 233, 255, 0.22);
+      border-radius: 14px;
+      overflow: hidden;
+      background:
+        linear-gradient(90deg, rgba(0, 200, 255, 0.08), transparent 8%, transparent 92%, rgba(155, 92, 255, 0.08));
+    }
+
+    .cell {
+      min-height: 48px;
+      min-width: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border-right: 1px solid var(--fret-line);
+      border-bottom: 1px solid var(--string-line);
+      background: var(--cell);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .cell:nth-child(odd) {
+      background: var(--cell-alt);
+    }
+
+    .header-cell {
+      min-height: 38px;
+      color: var(--neon-green);
+      background: rgba(0, 245, 212, 0.08);
+      border-bottom: 1px solid rgba(0, 245, 212, 0.34);
+      font-size: 0.82rem;
+      text-shadow: 0 0 8px rgba(0, 245, 212, 0.45);
+    }
+
+    .string-label {
+      min-width: 80px;
+      color: var(--neon-yellow);
+      background: rgba(248, 243, 43, 0.08);
+      text-shadow: 0 0 8px rgba(248, 243, 43, 0.45);
+      border-right: 1px solid rgba(248, 243, 43, 0.25);
+      font-size: 0.92rem;
+    }
+
+    .open-label {
+      color: var(--neon-pink);
+    }
+
+    .note {
+      min-width: 32px;
+      height: 32px;
+      padding: 0 7px;
+      border-radius: 999px;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      color: #071526;
+      background: rgba(233, 247, 255, 0.84);
+      box-shadow:
+        0 0 8px rgba(233, 247, 255, 0.34),
+        inset 0 0 8px rgba(255, 255, 255, 0.2);
+    }
+
+    .note.highlight {
+      color: #071526;
+      background: var(--neon-pink);
+      box-shadow:
+        0 0 10px rgba(255, 45, 117, 0.95),
+        0 0 24px rgba(255, 45, 117, 0.56),
+        0 0 40px rgba(155, 92, 255, 0.36);
+      transform: scale(1.08);
+    }
+
+    .note.root-c {
+      background: var(--neon-blue);
+      box-shadow:
+        0 0 10px rgba(0, 200, 255, 0.88),
+        0 0 22px rgba(0, 200, 255, 0.38);
+    }
+
+    .fret-marker-row {
+      display: grid;
+      width: max-content;
+      margin-top: 10px;
+    }
+
+    .marker-cell {
+      min-height: 26px;
+      min-width: 58px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .marker-cell:first-child {
+      min-width: 80px;
+    }
+
+    .marker-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--neon-green);
+      box-shadow:
+        0 0 8px rgba(0, 245, 212, 0.9),
+        0 0 18px rgba(0, 245, 212, 0.38);
+    }
+
+    .marker-double {
+      display: flex;
+      gap: 5px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(7, 21, 38, 0.7);
+      border: 1px solid rgba(120, 220, 255, 0.2);
+    }
+
+    .small-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .dot-c {
+      background: var(--neon-blue);
+      box-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+    }
+
+    .dot-highlight {
+      background: var(--neon-pink);
+      box-shadow: 0 0 10px rgba(255, 45, 117, 0.8);
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 14px;
+      }
+
+      .controls {
+        justify-content: flex-start;
+      }
+
+      button,
+      select {
+        font-size: 0.85rem;
+      }
+
+      .fretboard-card {
+        padding: 14px;
+      }
+
+      .cell {
+        min-width: 54px;
+      }
+
+      .marker-cell {
+        min-width: 54px;
+      }
+
+      .string-label,
+      .marker-cell:first-child {
+        min-width: 72px;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+        color: black;
+      }
+
+      .controls {
+        display: none;
+      }
+
+      .fretboard-card,
+      .info-box {
+        box-shadow: none;
+        background: white;
+        border-color: #999;
+      }
+
+      .cell,
+      .header-cell,
+      .string-label {
+        color: black;
+        background: white;
+      }
+
+      .note,
+      .note.root-c,
+      .note.highlight {
+        background: white;
+        color: black;
+        border: 1px solid black;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Fretboard Notes</h1>
+    <div class="subtitle">
+      Standard 6-string, 7-string Low B, and 7-string Low A fretboard note map
+    </div>
+  </header>
+
+  <main>
+    <div class="controls">
+      <div class="control-group" id="tuning-buttons">
+        <span class="control-label">Version:</span>
+        <button class="active" data-tuning="standard6">6-String Standard</button>
+        <button data-tuning="lowB7">7-String Low B</button>
+        <button data-tuning="lowA7">7-String Low A</button>
+      </div>
+
+      <div class="control-group">
+        <span class="control-label">Frets:</span>
+        <select id="fret-count">
+          <option value="12">0–12</option>
+          <option value="15">0–15</option>
+          <option value="17">0–17</option>
+          <option value="24" selected>0–24</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <span class="control-label">Accidentals:</span>
+        <button class="active" id="sharp-btn">Sharps</button>
+        <button id="flat-btn">Flats</button>
+      </div>
+
+      <div class="control-group">
+        <span class="control-label">Highlight:</span>
+        <select id="highlight-note">
+          <option value="">None</option>
+          <option value="C">C</option>
+          <option value="C#|Db">C# / Db</option>
+          <option value="D">D</option>
+          <option value="D#|Eb">D# / Eb</option>
+          <option value="E">E</option>
+          <option value="F">F</option>
+          <option value="F#|Gb">F# / Gb</option>
+          <option value="G">G</option>
+          <option value="G#|Ab">G# / Ab</option>
+          <option value="A">A</option>
+          <option value="A#|Bb">A# / Bb</option>
+          <option value="B">B</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="info-box" id="info-box"></div>
+
+    <section class="fretboard-card">
+      <div class="fretboard-title-row">
+        <h2 id="board-title"></h2>
+        <div class="tuning-text" id="tuning-text"></div>
+      </div>
+
+      <div class="scroll-hint">
+        If you cannot see fret 24, scroll horizontally or drag the scrollbar below the fretboard.
+      </div>
+
+      <div class="fretboard-scroll">
+        <div id="fretboard" class="fretboard"></div>
+        <div id="fret-markers" class="fret-marker-row"></div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <span class="small-dot dot-c"></span>
+          C notes
+        </div>
+        <div class="legend-item">
+          <span class="small-dot dot-highlight"></span>
+          Selected highlight note
+        </div>
+        <div class="legend-item">
+          Open strings are fret 0
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const tunings = {
+      standard6: {
+        title: "6-String Standard",
+        description: "Standard six-string guitar tuning.",
+        stringsLowToHigh: ["E", "A", "D", "G", "B", "E"]
+      },
+      lowB7: {
+        title: "7-String Low B",
+        description: "Seven-string guitar with Low B plus standard six strings.",
+        stringsLowToHigh: ["B", "E", "A", "D", "G", "B", "E"]
+      },
+      lowA7: {
+        title: "7-String Low A",
+        description: "Seven-string guitar with Low A plus standard six strings.",
+        stringsLowToHigh: ["A", "E", "A", "D", "G", "B", "E"]
+      }
+    };
+
+    const sharpNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    const flatNotes = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+
+    const noteIndexes = {
+      "C": 0,
+      "C#": 1,
+      "Db": 1,
+      "D": 2,
+      "D#": 3,
+      "Eb": 3,
+      "E": 4,
+      "F": 5,
+      "F#": 6,
+      "Gb": 6,
+      "G": 7,
+      "G#": 8,
+      "Ab": 8,
+      "A": 9,
+      "A#": 10,
+      "Bb": 10,
+      "B": 11
+    };
+
+    const fretMarkers = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
+
+    let currentTuning = "standard6";
+    let useFlats = false;
+
+    const fretboardEl = document.getElementById("fretboard");
+    const markersEl = document.getElementById("fret-markers");
+    const boardTitleEl = document.getElementById("board-title");
+    const tuningTextEl = document.getElementById("tuning-text");
+    const infoBoxEl = document.getElementById("info-box");
+    const fretCountEl = document.getElementById("fret-count");
+    const highlightNoteEl = document.getElementById("highlight-note");
+    const sharpBtn = document.getElementById("sharp-btn");
+    const flatBtn = document.getElementById("flat-btn");
+
+    function getNoteName(openNote, fret) {
+      const noteSet = useFlats ? flatNotes : sharpNotes;
+      const openIndex = noteIndexes[openNote];
+      const noteIndex = (openIndex + fret) % 12;
+      return noteSet[noteIndex];
+    }
+
+    function shouldHighlight(noteName) {
+      const selected = highlightNoteEl.value;
+
+      if (!selected) return false;
+
+      const selectedParts = selected.split("|");
+      const noteIndex = noteIndexes[noteName];
+
+      return selectedParts.some(part => noteIndexes[part] === noteIndex);
+    }
+
+    function isC(noteName) {
+      return noteIndexes[noteName] === 0;
+    }
+
+    function renderFretboard() {
+      const tuning = tunings[currentTuning];
+      const maxFret = Number(fretCountEl.value);
+      const strings = tuning.stringsLowToHigh;
+
+      boardTitleEl.textContent = tuning.title;
+      tuningTextEl.innerHTML = `Tuning low to high: <strong>${strings.join(" ")}</strong>`;
+
+      infoBoxEl.innerHTML = `
+        <strong>${tuning.title}</strong><br>
+        ${tuning.description}<br>
+        Showing frets <strong>0 to ${maxFret}</strong>.
+        Accidentals: <strong>${useFlats ? "Flats" : "Sharps"}</strong>.
+      `;
+
+      fretboardEl.style.gridTemplateColumns = `80px repeat(${maxFret + 1}, 58px)`;
+      markersEl.style.gridTemplateColumns = `80px repeat(${maxFret + 1}, 58px)`;
+
+      fretboardEl.innerHTML = "";
+      markersEl.innerHTML = "";
+
+      const blankHeader = document.createElement("div");
+      blankHeader.className = "cell header-cell";
+      blankHeader.textContent = "String";
+      fretboardEl.appendChild(blankHeader);
+
+      for (let fret = 0; fret <= maxFret; fret++) {
+        const headerCell = document.createElement("div");
+        headerCell.className = "cell header-cell";
+        headerCell.textContent = fret === 0 ? "Open" : fret;
+
+        if (fret === 0) {
+          headerCell.classList.add("open-label");
+        }
+
+        fretboardEl.appendChild(headerCell);
+      }
+
+      strings.slice().reverse().forEach((openNote, index) => {
+        const stringNumber = strings.length - index;
+
+        const label = document.createElement("div");
+        label.className = "cell string-label";
+        label.innerHTML = `${stringNumber}<br>${openNote}`;
+        fretboardEl.appendChild(label);
+
+        for (let fret = 0; fret <= maxFret; fret++) {
+          const noteName = getNoteName(openNote, fret);
+
+          const cell = document.createElement("div");
+          cell.className = "cell";
+
+          const note = document.createElement("span");
+          note.className = "note";
+          note.textContent = noteName;
+
+          if (isC(noteName)) {
+            note.classList.add("root-c");
+          }
+
+          if (shouldHighlight(noteName)) {
+            note.classList.add("highlight");
+          }
+
+          cell.appendChild(note);
+          fretboardEl.appendChild(cell);
+        }
+      });
+
+      const emptyMarker = document.createElement("div");
+      emptyMarker.className = "marker-cell";
+      markersEl.appendChild(emptyMarker);
+
+      for (let fret = 0; fret <= maxFret; fret++) {
+        const markerCell = document.createElement("div");
+        markerCell.className = "marker-cell";
+
+        if (fretMarkers.includes(fret)) {
+          if (fret === 12 || fret === 24) {
+            markerCell.innerHTML = `
+              <span class="marker-double">
+                <span class="marker-dot"></span>
+                <span class="marker-dot"></span>
+              </span>
+            `;
+          } else {
+            markerCell.innerHTML = `<span class="marker-dot"></span>`;
+          }
+        }
+
+        markersEl.appendChild(markerCell);
+      }
+    }
+
+    document.getElementById("tuning-buttons").addEventListener("click", event => {
+      if (event.target.tagName !== "BUTTON") return;
+
+      document.querySelectorAll("#tuning-buttons button").forEach(button => {
+        button.classList.remove("active");
+      });
+
+      event.target.classList.add("active");
+      currentTuning = event.target.dataset.tuning;
+      renderFretboard();
+    });
+
+    sharpBtn.addEventListener("click", () => {
+      useFlats = false;
+      sharpBtn.classList.add("active");
+      flatBtn.classList.remove("active");
+      renderFretboard();
+    });
+
+    flatBtn.addEventListener("click", () => {
+      useFlats = true;
+      flatBtn.classList.add("active");
+      sharpBtn.classList.remove("active");
+      renderFretboard();
+    });
+
+    fretCountEl.addEventListener("change", renderFretboard);
+    highlightNoteEl.addEventListener("change", renderFretboard);
+
+    renderFretboard();
+  </script>
+</body>
+</html>
