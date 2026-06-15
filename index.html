@@ -1,0 +1,735 @@
+<!DOCTYPE html><html lang="en"><head><meta name="x-poe-datastore-behavior" content="local_only"><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Fretboard Notes</title>
+
+  <style>
+    :root {
+      --bg: #050b18;
+      --panel: #0b1528;
+      --panel-light: #10213d;
+      --text: #e8f4ff;
+      --muted: #8fb3d9;
+      --border: rgba(72, 141, 199, 0.35);
+
+      --accent: #00e5ff;
+      --accent-soft: rgba(0, 229, 255, 0.18);
+      --purple: #8b5cf6;
+      --orange: #ff9f43;
+      --green: #34f5c5;
+      --yellow: #facc15;
+      --pink: #ff4fd8;
+
+      --neon-blue: #00e5ff;
+      --neon-deep-blue: #2563eb;
+      --navy-glow: rgba(0, 229, 255, 0.28);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Trebuchet MS", Arial, Helvetica, sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(0, 229, 255, 0.16), transparent 32%),
+        radial-gradient(circle at top right, rgba(37, 99, 235, 0.18), transparent 35%),
+        radial-gradient(circle at bottom center, rgba(139, 92, 246, 0.12), transparent 38%),
+        linear-gradient(135deg, #030712, #061426 45%, #0a1633);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 24px;
+    }
+
+    .app {
+      max-width: 1400px;
+      margin: 0 auto;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 2.1rem;
+      letter-spacing: 0.04em;
+      color: #e8faff;
+      text-shadow:
+        0 0 6px rgba(0, 229, 255, 0.5),
+        0 0 16px rgba(0, 229, 255, 0.28),
+        0 0 28px rgba(37, 99, 235, 0.22);
+    }
+
+    .subtitle {
+      margin: 0 0 12px;
+      color: #9cc9f5;
+      line-height: 1.5;
+      text-shadow: 0 0 8px rgba(0, 229, 255, 0.12);
+    }
+
+    .intro-text {
+      margin: 0 0 22px;
+      color: #dff7ff;
+      line-height: 1.55;
+      font-size: 1rem;
+      text-shadow: 0 0 8px rgba(0, 229, 255, 0.16);
+    }
+
+    .intro-text strong {
+      color: #00e5ff;
+      text-shadow:
+        0 0 6px rgba(0, 229, 255, 0.65),
+        0 0 18px rgba(0, 229, 255, 0.35);
+    }
+
+    .panel {
+      background: rgba(6, 20, 38, 0.86);
+      border: 1px solid rgba(0, 229, 255, 0.22);
+      border-radius: 18px;
+      padding: 18px;
+      box-shadow:
+        0 18px 45px rgba(0, 0, 0, 0.32),
+        0 0 28px rgba(0, 229, 255, 0.08);
+      backdrop-filter: blur(10px);
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns:
+        minmax(180px, 1.2fr)
+        120px
+        130px
+        minmax(220px, 1.4fr)
+        minmax(130px, 1fr)
+        minmax(130px, 1fr)
+        minmax(190px, 1.2fr);
+      gap: 14px;
+      align-items: end;
+      margin-bottom: 18px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 7px;
+      color: #a8d8ff;
+      font-size: 0.86rem;
+      letter-spacing: 0.02em;
+      text-shadow: 0 0 7px rgba(0, 229, 255, 0.16);
+    }
+
+    select {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 12px;
+      border: 1px solid rgba(0, 229, 255, 0.28);
+      background: #081426;
+      color: #e8f4ff;
+      font-size: 0.95rem;
+      outline: none;
+      box-shadow: inset 0 0 12px rgba(0, 229, 255, 0.04);
+    }
+
+    select:focus {
+      border-color: #00e5ff;
+      box-shadow:
+        0 0 0 3px rgba(0, 229, 255, 0.18),
+        0 0 18px rgba(0, 229, 255, 0.22);
+    }
+
+    .small-control {
+      max-width: 130px;
+    }
+
+    .small-control select {
+      padding: 7px 9px;
+      font-size: 0.82rem;
+      border-radius: 10px;
+    }
+
+    .show-control {
+      position: relative;
+      padding: 12px;
+      border-radius: 16px;
+      border: 1px solid rgba(0, 229, 255, 0.52);
+      background:
+        radial-gradient(circle at top right, rgba(0, 229, 255, 0.18), transparent 45%),
+        rgba(0, 229, 255, 0.08);
+      box-shadow:
+        0 0 0 1px rgba(0, 229, 255, 0.08),
+        0 0 24px rgba(0, 229, 255, 0.18);
+      transition:
+        transform 0.2s ease,
+        box-shadow 0.2s ease,
+        border-color 0.2s ease;
+    }
+
+    .show-control:hover {
+      transform: translateY(-1px);
+      border-color: rgba(0, 229, 255, 0.85);
+      box-shadow:
+        0 0 0 1px rgba(0, 229, 255, 0.16),
+        0 0 34px rgba(0, 229, 255, 0.28);
+    }
+
+    .show-control label {
+      color: #caf6ff;
+      font-weight: 800;
+    }
+
+    .show-guide {
+      margin: 0 0 8px;
+      color: #00e5ff;
+      font-size: 0.84rem;
+      font-weight: 900;
+      line-height: 1.35;
+      text-shadow:
+        0 0 6px rgba(0, 229, 255, 0.75),
+        0 0 16px rgba(0, 229, 255, 0.38);
+    }
+
+    .show-control select {
+      border-color: rgba(0, 229, 255, 0.68);
+      background: #071a30;
+      color: #00e5ff;
+      font-weight: 900;
+      cursor: pointer;
+      text-shadow: 0 0 8px rgba(0, 229, 255, 0.25);
+    }
+
+    .show-control select:hover {
+      background: #0a233f;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin: 8px 0 16px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+
+    .dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .dot.root {
+      background: var(--yellow);
+      box-shadow: 0 0 10px rgba(250, 204, 21, 0.65);
+    }
+
+    .dot.active {
+      background: var(--accent);
+      box-shadow: 0 0 10px rgba(0, 229, 255, 0.65);
+    }
+
+    .dot.single {
+      background: var(--pink);
+      box-shadow: 0 0 10px rgba(255, 79, 216, 0.7);
+    }
+
+    .fretboard-wrap {
+      overflow-x: auto;
+      overflow-y: hidden;
+      border: 1px solid rgba(0, 229, 255, 0.22);
+      border-radius: 16px;
+      background:
+        radial-gradient(circle at top, rgba(0, 229, 255, 0.05), transparent 45%),
+        rgba(3, 7, 18, 0.78);
+      padding: 12px;
+      box-shadow: inset 0 0 24px rgba(0, 229, 255, 0.05);
+    }
+
+    .fretboard {
+      min-width: 1825px;
+    }
+
+    .fret-labels {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 72px;
+      margin-bottom: 6px;
+      color: #9cc9f5;
+      font-size: 0.78rem;
+      text-align: center;
+      text-shadow: 0 0 6px rgba(0, 229, 255, 0.16);
+    }
+
+    .fret-label {
+      padding: 4px 0;
+    }
+
+    .fret-label:first-child {
+      color: #facc15;
+      font-weight: 900;
+      text-shadow:
+        0 0 6px rgba(250, 204, 21, 0.7),
+        0 0 14px rgba(250, 204, 21, 0.35);
+    }
+
+    .string-row {
+      display: grid;
+      grid-auto-flow: column;
+      grid-auto-columns: 72px;
+      min-height: 54px;
+      position: relative;
+    }
+
+    .string-row::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 2px;
+      background: rgba(145, 212, 255, 0.5);
+      transform: translateY(-50%);
+      z-index: 0;
+      box-shadow:
+        0 0 6px rgba(0, 229, 255, 0.18),
+        0 0 14px rgba(0, 229, 255, 0.1);
+    }
+
+    .cell {
+      min-height: 54px;
+      border-right: 1px solid rgba(0, 229, 255, 0.14);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      z-index: 1;
+      background: rgba(255, 255, 255, 0.025);
+    }
+
+    .cell:nth-child(even) {
+      background: rgba(0, 229, 255, 0.045);
+    }
+
+    .cell:first-child {
+      border-left: 2px solid rgba(232, 250, 255, 0.35);
+      border-right: none;
+      background:
+        radial-gradient(circle at center, rgba(250, 204, 21, 0.08), transparent 55%),
+        rgba(0, 229, 255, 0.035);
+    }
+
+    .cell:first-child::after {
+      content: "";
+      position: absolute;
+      top: 5px;
+      right: -4px;
+      width: 6px;
+      height: calc(100% - 10px);
+      border-left: 2px solid rgba(232, 250, 255, 0.9);
+      border-right: 2px solid rgba(0, 229, 255, 0.75);
+      border-radius: 999px;
+      box-shadow:
+        0 0 8px rgba(0, 229, 255, 0.45),
+        0 0 16px rgba(232, 250, 255, 0.22);
+      z-index: 3;
+    }
+
+    .note {
+      width: 36px;
+      height: 36px;
+      border-radius: 999px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #10213d;
+      color: #e8faff;
+      border: 1px solid rgba(0, 229, 255, 0.18);
+      font-weight: 800;
+      font-size: 0.82rem;
+      text-shadow: 0 0 6px rgba(0, 229, 255, 0.2);
+      box-shadow:
+        inset 0 0 10px rgba(0, 229, 255, 0.06),
+        0 0 6px rgba(0, 229, 255, 0.08);
+    }
+
+    .cell:first-child .note {
+      border-color: rgba(250, 204, 21, 0.42);
+      box-shadow:
+        inset 0 0 10px rgba(250, 204, 21, 0.08),
+        0 0 8px rgba(250, 204, 21, 0.12);
+    }
+
+    .note.active {
+      background: #00e5ff;
+      color: #03131f;
+      box-shadow:
+        0 0 10px rgba(0, 229, 255, 0.55),
+        0 0 24px rgba(0, 229, 255, 0.28);
+    }
+
+    .note.root {
+      background: #facc15;
+      color: #1f1600;
+      box-shadow:
+        0 0 12px rgba(250, 204, 21, 0.65),
+        0 0 28px rgba(250, 204, 21, 0.34);
+    }
+
+    .note.single {
+      background: #ff4fd8;
+      color: #210018;
+      box-shadow:
+        0 0 12px rgba(255, 79, 216, 0.7),
+        0 0 28px rgba(255, 79, 216, 0.38);
+    }
+
+    .hint {
+      margin: 12px 0 0;
+      color: #8fb3d9;
+      font-size: 0.88rem;
+      line-height: 1.5;
+    }
+
+    .footer {
+      margin-top: 14px;
+      color: #8fb3d9;
+      font-size: 0.82rem;
+    }
+
+    @media (max-width: 1050px) {
+      .controls {
+        grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      }
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 14px;
+      }
+
+      h1 {
+        font-size: 1.55rem;
+      }
+
+      .panel {
+        padding: 14px;
+      }
+
+      .controls {
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      }
+
+      .small-control {
+        max-width: 115px;
+      }
+
+      .string-row {
+        grid-auto-columns: 62px;
+      }
+
+      .fret-labels {
+        grid-auto-columns: 62px;
+      }
+
+      .note {
+        width: 32px;
+        height: 32px;
+        font-size: 0.76rem;
+      }
+
+      .fretboard {
+        min-width: 1575px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <h1>Fretboard Notes</h1>
+
+    <p class="subtitle">
+      Standard 6-string, 7-string Low B, and 7-string Low A fretboard note map
+    </p>
+
+    <p class="intro-text">
+      <strong>Click here and choose to show Notes/Scales.</strong><br>
+      This is a tool to visualise your fretboard!
+    </p>
+
+    <div class="panel">
+      <div class="controls">
+        <div>
+          <label for="version">Guitar Type:</label>
+          <select id="version">
+            <option value="standard6" selected="">6-String Standard</option>
+            <option value="lowB7">7-String Low B</option>
+            <option value="lowA7">7-String Low A</option>
+          </select>
+        </div>
+
+        <div class="small-control">
+          <label for="frets">Frets:</label>
+          <select id="frets">
+            <option value="12">0–12</option>
+            <option value="15">0–15</option>
+            <option value="17">0–17</option>
+            <option value="24" selected="">0–24</option>
+          </select>
+        </div>
+
+        <div class="small-control">
+          <label for="accidentals">Accidentals:</label>
+          <select id="accidentals">
+            <option value="sharps" selected="">Sharps</option>
+            <option value="flats">Flats</option>
+          </select>
+        </div>
+
+        <div class="show-control">
+          <p class="show-guide">
+            press here to show notes/scales you want
+          </p>
+
+          <label for="highlightType">Show:</label>
+          <select id="highlightType">
+            <option value="none">None</option>
+            <option value="single">Single Note</option>
+            <option value="scale">Scale / Mode</option>
+            <option value="both" selected="">Show Both</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="note">Note:</label>
+          <select id="note">
+            <option value="C" selected="">C</option>
+            <option value="C#">C# / Db</option>
+            <option value="D">D</option>
+            <option value="D#">D# / Eb</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+            <option value="F#">F# / Gb</option>
+            <option value="G">G</option>
+            <option value="G#">G# / Ab</option>
+            <option value="A">A</option>
+            <option value="A#">A# / Bb</option>
+            <option value="B">B</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="root">Root:</label>
+          <select id="root">
+            <option value="C" selected="">C</option>
+            <option value="C#">C# / Db</option>
+            <option value="D">D</option>
+            <option value="D#">D# / Eb</option>
+            <option value="E">E</option>
+            <option value="F">F</option>
+            <option value="F#">F# / Gb</option>
+            <option value="G">G</option>
+            <option value="G#">G# / Ab</option>
+            <option value="A">A</option>
+            <option value="A#">A# / Bb</option>
+            <option value="B">B</option>
+          </select>
+        </div>
+
+        <div>
+          <label for="scale">Scale / Mode:</label>
+          <select id="scale">
+            <option value="major" selected="">Major</option>
+            <option value="naturalMinor">Natural Minor</option>
+            <option value="harmonicMinor">Harmonic Minor</option>
+            <option value="melodicMinor">Melodic Minor</option>
+            <option value="dimWholeHalf">Diminished Whole-Half</option>
+            <option value="dimHalfWhole">Diminished Half-Whole</option>
+            <option value="ionian">Ionian</option>
+            <option value="dorian">Dorian</option>
+            <option value="phrygian">Phrygian</option>
+            <option value="lydian">Lydian</option>
+            <option value="mixolydian">Mixolydian</option>
+            <option value="aeolian">Aeolian</option>
+            <option value="locrian">Locrian</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="legend">
+        <span class="legend-item">
+          <span class="dot root"></span>
+          Scale root
+        </span>
+
+        <span class="legend-item">
+          <span class="dot active"></span>
+          Scale tones
+        </span>
+
+        <span class="legend-item">
+          <span class="dot single"></span>
+          Selected note highlight
+        </span>
+      </div>
+
+      <div class="fretboard-wrap">
+        <div id="fretboard" class="fretboard"></div>
+      </div>
+
+      <p class="hint">
+        If you cannot see fret 24, scroll horizontally or drag the scrollbar below the fretboard.
+      </p>
+
+      <div class="footer">
+        Open strings are fret 0
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const sharpNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    const flatNotes = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+
+    const tunings = {
+      standard6: ["E", "B", "G", "D", "A", "E"],
+      lowB7: ["E", "B", "G", "D", "A", "E", "B"],
+      lowA7: ["E", "B", "G", "D", "A", "E", "A"]
+    };
+
+    const scales = {
+      major: [0, 2, 4, 5, 7, 9, 11],
+      naturalMinor: [0, 2, 3, 5, 7, 8, 10],
+      harmonicMinor: [0, 2, 3, 5, 7, 8, 11],
+      melodicMinor: [0, 2, 3, 5, 7, 9, 11],
+      dimWholeHalf: [0, 2, 3, 5, 6, 8, 9, 11],
+      dimHalfWhole: [0, 1, 3, 4, 6, 7, 9, 10],
+      ionian: [0, 2, 4, 5, 7, 9, 11],
+      dorian: [0, 2, 3, 5, 7, 9, 10],
+      phrygian: [0, 1, 3, 5, 7, 8, 10],
+      lydian: [0, 2, 4, 6, 7, 9, 11],
+      mixolydian: [0, 2, 4, 5, 7, 9, 10],
+      aeolian: [0, 2, 3, 5, 7, 8, 10],
+      locrian: [0, 1, 3, 5, 6, 8, 10]
+    };
+
+    const versionSelect = document.getElementById("version");
+    const fretsSelect = document.getElementById("frets");
+    const accidentalsSelect = document.getElementById("accidentals");
+    const highlightTypeSelect = document.getElementById("highlightType");
+    const noteSelect = document.getElementById("note");
+    const rootSelect = document.getElementById("root");
+    const scaleSelect = document.getElementById("scale");
+    const fretboard = document.getElementById("fretboard");
+
+    function noteIndex(note) {
+      const map = {
+        "C": 0, "C#": 1, "Db": 1,
+        "D": 2, "D#": 3, "Eb": 3,
+        "E": 4,
+        "F": 5, "F#": 6, "Gb": 6,
+        "G": 7, "G#": 8, "Ab": 8,
+        "A": 9, "A#": 10, "Bb": 10,
+        "B": 11
+      };
+
+      return map[note];
+    }
+
+    function displayNote(index) {
+      const notes = accidentalsSelect.value === "flats" ? flatNotes : sharpNotes;
+      return notes[index % 12];
+    }
+
+    function getScaleNotes(root, scaleName) {
+      const rootIdx = noteIndex(root);
+      return scales[scaleName].map(interval => (rootIdx + interval) % 12);
+    }
+
+    function renderFretboard() {
+      const tuning = tunings[versionSelect.value];
+      const maxFret = Number(fretsSelect.value);
+      const highlightType = highlightTypeSelect.value;
+      const selectedNote = noteIndex(noteSelect.value);
+      const rootNote = noteIndex(rootSelect.value);
+      const scaleNotes = getScaleNotes(rootSelect.value, scaleSelect.value);
+
+      fretboard.innerHTML = "";
+
+      const labelRow = document.createElement("div");
+      labelRow.className = "fret-labels";
+
+      for (let fret = 0; fret <= maxFret; fret++) {
+        const label = document.createElement("div");
+        label.className = "fret-label";
+        label.textContent = fret;
+        labelRow.appendChild(label);
+      }
+
+      fretboard.appendChild(labelRow);
+
+      tuning.forEach(openNote => {
+        const row = document.createElement("div");
+        row.className = "string-row";
+
+        const openIdx = noteIndex(openNote);
+
+        for (let fret = 0; fret <= maxFret; fret++) {
+          const currentIdx = (openIdx + fret) % 12;
+
+          const cell = document.createElement("div");
+          cell.className = "cell";
+
+          const note = document.createElement("div");
+          note.className = "note";
+          note.textContent = displayNote(currentIdx);
+
+          if (
+            (highlightType === "scale" || highlightType === "both") &&
+            scaleNotes.includes(currentIdx)
+          ) {
+            note.classList.add("active");
+          }
+
+          if (
+            (highlightType === "scale" || highlightType === "both") &&
+            currentIdx === rootNote
+          ) {
+            note.classList.add("root");
+          }
+
+          if (
+            (highlightType === "single" || highlightType === "both") &&
+            currentIdx === selectedNote
+          ) {
+            note.classList.add("single");
+          }
+
+          cell.appendChild(note);
+          row.appendChild(cell);
+        }
+
+        fretboard.appendChild(row);
+      });
+    }
+
+    [
+      versionSelect,
+      fretsSelect,
+      accidentalsSelect,
+      highlightTypeSelect,
+      noteSelect,
+      rootSelect,
+      scaleSelect
+    ].forEach(element => {
+      element.addEventListener("change", renderFretboard);
+    });
+
+    renderFretboard();
+  </script>
+
+
+</body></html>
