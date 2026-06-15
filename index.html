@@ -276,15 +276,16 @@
       box-shadow:
         0 0 8px rgba(233, 247, 255, 0.34),
         inset 0 0 8px rgba(255, 255, 255, 0.2);
+      transition: 0.16s ease;
     }
 
     .note.highlight {
       color: #071526;
-      background: var(--neon-pink);
+      background: var(--neon-yellow);
       box-shadow:
-        0 0 10px rgba(255, 45, 117, 0.95),
-        0 0 24px rgba(255, 45, 117, 0.56),
-        0 0 40px rgba(155, 92, 255, 0.36);
+        0 0 10px rgba(248, 243, 43, 0.95),
+        0 0 24px rgba(248, 243, 43, 0.5),
+        0 0 40px rgba(0, 245, 212, 0.22);
       transform: scale(1.08);
     }
 
@@ -293,6 +294,17 @@
       box-shadow:
         0 0 10px rgba(0, 200, 255, 0.88),
         0 0 22px rgba(0, 200, 255, 0.38);
+    }
+
+    .note.scale-root {
+      color: #071526;
+      background: var(--neon-blue);
+      box-shadow:
+        0 0 12px rgba(0, 200, 255, 0.95),
+        0 0 28px rgba(0, 200, 255, 0.56),
+        0 0 44px rgba(0, 245, 212, 0.34);
+      transform: scale(1.13);
+      border: 1px solid rgba(255, 255, 255, 0.55);
     }
 
     .fret-marker-row {
@@ -356,14 +368,16 @@
       display: inline-block;
     }
 
-    .dot-c {
+    .dot-c,
+    .dot-root {
       background: var(--neon-blue);
       box-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
     }
 
-    .dot-highlight {
-      background: var(--neon-pink);
-      box-shadow: 0 0 10px rgba(255, 45, 117, 0.8);
+    .dot-highlight,
+    .dot-scale {
+      background: var(--neon-yellow);
+      box-shadow: 0 0 10px rgba(248, 243, 43, 0.8);
     }
 
     @media (max-width: 700px) {
@@ -424,7 +438,8 @@
 
       .note,
       .note.root-c,
-      .note.highlight {
+      .note.highlight,
+      .note.scale-root {
         background: white;
         color: black;
         border: 1px solid black;
@@ -468,21 +483,68 @@
       </div>
 
       <div class="control-group">
-        <span class="control-label">Highlight:</span>
+        <span class="control-label">Highlight Type:</span>
+        <select id="highlight-type">
+          <option value="none">None</option>
+          <option value="single">Single Note</option>
+          <option value="scale">Scale / Mode</option>
+        </select>
+      </div>
+
+      <div class="control-group" id="single-note-group" style="display: none;">
+        <span class="control-label">Note:</span>
         <select id="highlight-note">
-          <option value="">None</option>
-          <option value="C">C</option>
-          <option value="C#|Db">C# / Db</option>
-          <option value="D">D</option>
-          <option value="D#|Eb">D# / Eb</option>
-          <option value="E">E</option>
-          <option value="F">F</option>
-          <option value="F#|Gb">F# / Gb</option>
-          <option value="G">G</option>
-          <option value="G#|Ab">G# / Ab</option>
-          <option value="A">A</option>
-          <option value="A#|Bb">A# / Bb</option>
-          <option value="B">B</option>
+          <option value="0">C</option>
+          <option value="1">C# / Db</option>
+          <option value="2">D</option>
+          <option value="3">D# / Eb</option>
+          <option value="4">E</option>
+          <option value="5">F</option>
+          <option value="6">F# / Gb</option>
+          <option value="7">G</option>
+          <option value="8">G# / Ab</option>
+          <option value="9">A</option>
+          <option value="10">A# / Bb</option>
+          <option value="11">B</option>
+        </select>
+      </div>
+
+      <div class="control-group" id="scale-root-group" style="display: none;">
+        <span class="control-label">Root:</span>
+        <select id="scale-root">
+          <option value="0">C</option>
+          <option value="1">C# / Db</option>
+          <option value="2">D</option>
+          <option value="3">D# / Eb</option>
+          <option value="4">E</option>
+          <option value="5">F</option>
+          <option value="6">F# / Gb</option>
+          <option value="7">G</option>
+          <option value="8">G# / Ab</option>
+          <option value="9">A</option>
+          <option value="10">A# / Bb</option>
+          <option value="11">B</option>
+        </select>
+      </div>
+
+      <div class="control-group" id="scale-type-group" style="display: none;">
+        <span class="control-label">Scale / Mode:</span>
+        <select id="scale-type">
+          <optgroup label="Scales">
+            <option value="major">Major</option>
+            <option value="naturalMinor">Natural Minor</option>
+            <option value="diminishedWholeHalf">Diminished Whole-Half</option>
+            <option value="diminishedHalfWhole">Diminished Half-Whole</option>
+          </optgroup>
+          <optgroup label="Modes">
+            <option value="ionian">Ionian</option>
+            <option value="dorian">Dorian</option>
+            <option value="phrygian">Phrygian</option>
+            <option value="lydian">Lydian</option>
+            <option value="mixolydian">Mixolydian</option>
+            <option value="aeolian">Aeolian</option>
+            <option value="locrian">Locrian</option>
+          </optgroup>
         </select>
       </div>
     </div>
@@ -507,11 +569,11 @@
       <div class="legend">
         <div class="legend-item">
           <span class="small-dot dot-c"></span>
-          C notes
+          C notes / scale root
         </div>
         <div class="legend-item">
           <span class="small-dot dot-highlight"></span>
-          Selected highlight note
+          Selected note / scale tones
         </div>
         <div class="legend-item">
           Open strings are fret 0
@@ -562,6 +624,53 @@
       "B": 11
     };
 
+    const scalePatterns = {
+      major: {
+        name: "Major",
+        intervals: [0, 2, 4, 5, 7, 9, 11]
+      },
+      naturalMinor: {
+        name: "Natural Minor",
+        intervals: [0, 2, 3, 5, 7, 8, 10]
+      },
+      diminishedWholeHalf: {
+        name: "Diminished Whole-Half",
+        intervals: [0, 2, 3, 5, 6, 8, 9, 11]
+      },
+      diminishedHalfWhole: {
+        name: "Diminished Half-Whole",
+        intervals: [0, 1, 3, 4, 6, 7, 9, 10]
+      },
+      ionian: {
+        name: "Ionian",
+        intervals: [0, 2, 4, 5, 7, 9, 11]
+      },
+      dorian: {
+        name: "Dorian",
+        intervals: [0, 2, 3, 5, 7, 9, 10]
+      },
+      phrygian: {
+        name: "Phrygian",
+        intervals: [0, 1, 3, 5, 7, 8, 10]
+      },
+      lydian: {
+        name: "Lydian",
+        intervals: [0, 2, 4, 6, 7, 9, 11]
+      },
+      mixolydian: {
+        name: "Mixolydian",
+        intervals: [0, 2, 4, 5, 7, 9, 10]
+      },
+      aeolian: {
+        name: "Aeolian",
+        intervals: [0, 2, 3, 5, 7, 8, 10]
+      },
+      locrian: {
+        name: "Locrian",
+        intervals: [0, 1, 3, 5, 6, 8, 10]
+      }
+    };
+
     const fretMarkers = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
 
     let currentTuning = "standard6";
@@ -573,7 +682,15 @@
     const tuningTextEl = document.getElementById("tuning-text");
     const infoBoxEl = document.getElementById("info-box");
     const fretCountEl = document.getElementById("fret-count");
+
+    const highlightTypeEl = document.getElementById("highlight-type");
     const highlightNoteEl = document.getElementById("highlight-note");
+    const singleNoteGroupEl = document.getElementById("single-note-group");
+    const scaleRootGroupEl = document.getElementById("scale-root-group");
+    const scaleTypeGroupEl = document.getElementById("scale-type-group");
+    const scaleRootEl = document.getElementById("scale-root");
+    const scaleTypeEl = document.getElementById("scale-type");
+
     const sharpBtn = document.getElementById("sharp-btn");
     const flatBtn = document.getElementById("flat-btn");
 
@@ -584,19 +701,101 @@
       return noteSet[noteIndex];
     }
 
-    function shouldHighlight(noteName) {
-      const selected = highlightNoteEl.value;
-
-      if (!selected) return false;
-
-      const selectedParts = selected.split("|");
-      const noteIndex = noteIndexes[noteName];
-
-      return selectedParts.some(part => noteIndexes[part] === noteIndex);
+    function getNoteIndex(openNote, fret) {
+      const openIndex = noteIndexes[openNote];
+      return (openIndex + fret) % 12;
     }
 
-    function isC(noteName) {
-      return noteIndexes[noteName] === 0;
+    function getDisplayRootName(rootIndex) {
+      const noteSet = useFlats ? flatNotes : sharpNotes;
+      return noteSet[rootIndex];
+    }
+
+    function getCurrentScaleIndexes() {
+      const rootIndex = Number(scaleRootEl.value);
+      const scaleKey = scaleTypeEl.value;
+      const pattern = scalePatterns[scaleKey].intervals;
+
+      return new Set(pattern.map(interval => (rootIndex + interval) % 12));
+    }
+
+    function getHighlightClass(noteIndex) {
+      const highlightType = highlightTypeEl.value;
+
+      if (highlightType === "none") {
+        return "";
+      }
+
+      if (highlightType === "single") {
+        const selectedIndex = Number(highlightNoteEl.value);
+        return noteIndex === selectedIndex ? "highlight" : "";
+      }
+
+      if (highlightType === "scale") {
+        const rootIndex = Number(scaleRootEl.value);
+        const scaleIndexes = getCurrentScaleIndexes();
+
+        if (noteIndex === rootIndex) {
+          return "scale-root";
+        }
+
+        if (scaleIndexes.has(noteIndex)) {
+          return "highlight";
+        }
+
+        return "";
+      }
+
+      return "";
+    }
+
+    function isC(noteIndex) {
+      return noteIndex === 0;
+    }
+
+    function updateHighlightControls() {
+      const type = highlightTypeEl.value;
+
+      singleNoteGroupEl.style.display = type === "single" ? "flex" : "none";
+      scaleRootGroupEl.style.display = type === "scale" ? "flex" : "none";
+      scaleTypeGroupEl.style.display = type === "scale" ? "flex" : "none";
+
+      renderFretboard();
+    }
+
+    function getHighlightInfoText() {
+      const type = highlightTypeEl.value;
+
+      if (type === "none") {
+        return "Highlight: <strong>None</strong>.";
+      }
+
+      if (type === "single") {
+        const selectedIndex = Number(highlightNoteEl.value);
+        const noteName = getDisplayRootName(selectedIndex);
+
+        return `Highlight: <strong>${noteName} notes</strong>.`;
+      }
+
+      if (type === "scale") {
+        const rootIndex = Number(scaleRootEl.value);
+        const rootName = getDisplayRootName(rootIndex);
+        const scaleKey = scaleTypeEl.value;
+        const scaleName = scalePatterns[scaleKey].name;
+        const scaleIndexes = Array.from(getCurrentScaleIndexes());
+        const noteSet = useFlats ? flatNotes : sharpNotes;
+        const scaleNoteNames = scaleIndexes
+          .sort((a, b) => a - b)
+          .map(index => noteSet[index])
+          .join(" ");
+
+        return `
+          Highlight: <strong>${rootName} ${scaleName}</strong>.<br>
+          Scale notes: <strong>${scaleNoteNames}</strong>.
+        `;
+      }
+
+      return "";
     }
 
     function renderFretboard() {
@@ -611,7 +810,8 @@
         <strong>${tuning.title}</strong><br>
         ${tuning.description}<br>
         Showing frets <strong>0 to ${maxFret}</strong>.
-        Accidentals: <strong>${useFlats ? "Flats" : "Sharps"}</strong>.
+        Accidentals: <strong>${useFlats ? "Flats" : "Sharps"}</strong>.<br>
+        ${getHighlightInfoText()}
       `;
 
       fretboardEl.style.gridTemplateColumns = `80px repeat(${maxFret + 1}, 58px)`;
@@ -647,6 +847,7 @@
 
         for (let fret = 0; fret <= maxFret; fret++) {
           const noteName = getNoteName(openNote, fret);
+          const noteIndex = getNoteIndex(openNote, fret);
 
           const cell = document.createElement("div");
           cell.className = "cell";
@@ -654,13 +855,15 @@
           const note = document.createElement("span");
           note.className = "note";
           note.textContent = noteName;
+          note.dataset.noteIndex = String(noteIndex);
 
-          if (isC(noteName)) {
+          if (isC(noteIndex)) {
             note.classList.add("root-c");
           }
 
-          if (shouldHighlight(noteName)) {
-            note.classList.add("highlight");
+          const highlightClass = getHighlightClass(noteIndex);
+          if (highlightClass) {
+            note.classList.add(highlightClass);
           }
 
           cell.appendChild(note);
@@ -720,8 +923,12 @@
     });
 
     fretCountEl.addEventListener("change", renderFretboard);
+    highlightTypeEl.addEventListener("change", updateHighlightControls);
     highlightNoteEl.addEventListener("change", renderFretboard);
+    scaleRootEl.addEventListener("change", renderFretboard);
+    scaleTypeEl.addEventListener("change", renderFretboard);
 
+    updateHighlightControls();
     renderFretboard();
   </script>
 </body>
