@@ -1,0 +1,933 @@
+<!DOCTYPE html><html lang="en"><head><meta name="x-poe-datastore-behavior" content="local_only"><meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' 'unsafe-eval' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://code.jquery.com https://unpkg.com https://d3js.org https://threejs.org https://cdn.plot.ly https://stackpath.bootstrapcdn.com https://maps.googleapis.com https://cdn.tailwindcss.com https://ajax.googleapis.com https://kit.fontawesome.com https://cdn.datatables.net https://maxcdn.bootstrapcdn.com https://code.highcharts.com https://tako-static-assets-production.s3.amazonaws.com https://www.youtube.com https://fonts.googleapis.com https://fonts.gstatic.com https://pfst.cf2.poecdn.net https://puc.poecdn.net https://i.imgur.com https://wikimedia.org https://*.icons8.com https://*.giphy.com https://picsum.photos https://images.unsplash.com; frame-src 'self' https://www.youtube.com https://trytako.com; child-src 'self'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests; block-all-mixed-content;">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <title>Fretboard Notes</title>
+
+  <style>
+    :root {
+      --bg: #061426;
+      --bg2: #0b2240;
+      --ink: #e9f7ff;
+      --muted: #9fb8d0;
+      --border: rgba(120, 220, 255, 0.28);
+
+      --neon-blue: #00c8ff;
+      --neon-pink: #ff2d75;
+      --neon-green: #00f5d4;
+      --neon-purple: #9b5cff;
+      --neon-yellow: #f8f32b;
+
+      --cell: rgba(255, 255, 255, 0.045);
+      --cell-alt: rgba(0, 200, 255, 0.055);
+      --string-line: rgba(142, 233, 255, 0.62);
+      --fret-line: rgba(159, 184, 208, 0.32);
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      padding: 24px;
+      min-height: 100vh;
+      font-family: Arial, Helvetica, sans-serif;
+      color: var(--ink);
+      background:
+        radial-gradient(circle at top left, rgba(0, 200, 255, 0.24), transparent 30%),
+        radial-gradient(circle at top right, rgba(255, 45, 117, 0.18), transparent 28%),
+        radial-gradient(circle at bottom, rgba(155, 92, 255, 0.2), transparent 36%),
+        linear-gradient(135deg, var(--bg), var(--bg2));
+    }
+
+    header {
+      max-width: 1400px;
+      margin: 0 auto 24px;
+      text-align: center;
+    }
+
+    h1 {
+      margin: 0 0 10px;
+      font-size: clamp(2rem, 5vw, 3.4rem);
+      letter-spacing: -0.04em;
+      text-shadow:
+        0 0 8px rgba(0, 200, 255, 0.9),
+        0 0 22px rgba(0, 200, 255, 0.45),
+        0 0 36px rgba(255, 45, 117, 0.26);
+    }
+
+    .subtitle {
+      color: var(--muted);
+      line-height: 1.5;
+    }
+
+    main {
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 12px;
+      margin: 24px auto;
+      padding: 16px;
+      background: rgba(13, 35, 65, 0.7);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      box-shadow:
+        0 0 18px rgba(0, 200, 255, 0.12),
+        inset 0 0 18px rgba(255, 255, 255, 0.03);
+      backdrop-filter: blur(8px);
+    }
+
+    .control-group {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .control-label {
+      color: var(--muted);
+      font-size: 0.9rem;
+      margin-right: 2px;
+    }
+
+    button,
+    select {
+      border: 1px solid rgba(0, 200, 255, 0.42);
+      background: rgba(7, 21, 38, 0.86);
+      color: var(--ink);
+      padding: 8px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      box-shadow: 0 0 10px rgba(0, 200, 255, 0.12);
+      transition: 0.2s ease;
+      outline: none;
+    }
+
+    select {
+      border-radius: 12px;
+    }
+
+    button:hover,
+    select:hover {
+      background: rgba(0, 200, 255, 0.15);
+      border-color: rgba(0, 245, 212, 0.8);
+      box-shadow:
+        0 0 10px rgba(0, 245, 212, 0.34),
+        0 0 22px rgba(0, 200, 255, 0.18);
+    }
+
+    button.active {
+      background: linear-gradient(135deg, var(--neon-blue), var(--neon-purple));
+      color: #ffffff;
+      border-color: rgba(255, 255, 255, 0.5);
+      box-shadow:
+        0 0 12px rgba(0, 200, 255, 0.68),
+        0 0 28px rgba(155, 92, 255, 0.4);
+    }
+
+    .info-box {
+      background: rgba(15, 41, 71, 0.72);
+      border: 1px solid rgba(0, 245, 212, 0.35);
+      border-radius: 16px;
+      padding: 14px 16px;
+      margin-bottom: 22px;
+      color: var(--muted);
+      line-height: 1.55;
+      box-shadow:
+        0 0 14px rgba(0, 245, 212, 0.14),
+        inset 0 0 18px rgba(0, 200, 255, 0.04);
+    }
+
+    .info-box strong {
+      color: var(--ink);
+    }
+
+    .fretboard-card {
+      background:
+        linear-gradient(145deg, rgba(16, 47, 85, 0.9), rgba(8, 24, 45, 0.96));
+      border: 1px solid var(--border);
+      border-radius: 22px;
+      padding: 18px;
+      box-shadow:
+        0 0 22px rgba(0, 200, 255, 0.14),
+        0 0 44px rgba(155, 92, 255, 0.08),
+        inset 0 0 18px rgba(255, 255, 255, 0.03);
+      overflow: hidden;
+    }
+
+    .fretboard-title-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: baseline;
+      margin-bottom: 8px;
+    }
+
+    h2 {
+      margin: 0;
+      font-size: 1.45rem;
+      color: var(--ink);
+      text-shadow: 0 0 12px rgba(0, 245, 212, 0.42);
+    }
+
+    .tuning-text {
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
+
+    .scroll-hint {
+      color: var(--muted);
+      font-size: 0.86rem;
+      margin-bottom: 12px;
+    }
+
+    .fretboard-scroll {
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding-bottom: 12px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .fretboard-scroll::-webkit-scrollbar {
+      height: 10px;
+    }
+
+    .fretboard-scroll::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+    }
+
+    .fretboard-scroll::-webkit-scrollbar-thumb {
+      background: linear-gradient(90deg, var(--neon-blue), var(--neon-purple));
+      border-radius: 999px;
+    }
+
+    .fretboard {
+      display: grid;
+      width: max-content;
+      border: 1px solid rgba(142, 233, 255, 0.22);
+      border-radius: 14px;
+      overflow: hidden;
+      background:
+        linear-gradient(90deg, rgba(0, 200, 255, 0.08), transparent 8%, transparent 92%, rgba(155, 92, 255, 0.08));
+    }
+
+    .cell {
+      min-height: 48px;
+      min-width: 58px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+      border-right: 1px solid var(--fret-line);
+      border-bottom: 1px solid var(--string-line);
+      background: var(--cell);
+      font-weight: 700;
+      letter-spacing: 0.02em;
+    }
+
+    .cell:nth-child(odd) {
+      background: var(--cell-alt);
+    }
+
+    .header-cell {
+      min-height: 38px;
+      color: var(--neon-green);
+      background: rgba(0, 245, 212, 0.08);
+      border-bottom: 1px solid rgba(0, 245, 212, 0.34);
+      font-size: 0.82rem;
+      text-shadow: 0 0 8px rgba(0, 245, 212, 0.45);
+    }
+
+    .string-label {
+      min-width: 80px;
+      color: var(--neon-yellow);
+      background: rgba(248, 243, 43, 0.08);
+      text-shadow: 0 0 8px rgba(248, 243, 43, 0.45);
+      border-right: 1px solid rgba(248, 243, 43, 0.25);
+      font-size: 0.92rem;
+    }
+
+    .open-label {
+      color: var(--neon-pink);
+    }
+
+    .note {
+      min-width: 32px;
+      height: 32px;
+      padding: 0 7px;
+      border-radius: 999px;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      color: #071526;
+      background: rgba(233, 247, 255, 0.84);
+      box-shadow:
+        0 0 8px rgba(233, 247, 255, 0.34),
+        inset 0 0 8px rgba(255, 255, 255, 0.2);
+      transition: 0.16s ease;
+    }
+
+    .note.highlight {
+      color: #071526;
+      background: var(--neon-yellow);
+      box-shadow:
+        0 0 10px rgba(248, 243, 43, 0.95),
+        0 0 24px rgba(248, 243, 43, 0.5),
+        0 0 40px rgba(0, 245, 212, 0.22);
+      transform: scale(1.08);
+    }
+
+    .note.root-c {
+      background: var(--neon-blue);
+      box-shadow:
+        0 0 10px rgba(0, 200, 255, 0.88),
+        0 0 22px rgba(0, 200, 255, 0.38);
+    }
+
+    .note.scale-root {
+      color: #071526;
+      background: var(--neon-blue);
+      box-shadow:
+        0 0 12px rgba(0, 200, 255, 0.95),
+        0 0 28px rgba(0, 200, 255, 0.56),
+        0 0 44px rgba(0, 245, 212, 0.34);
+      transform: scale(1.13);
+      border: 1px solid rgba(255, 255, 255, 0.55);
+    }
+
+    .fret-marker-row {
+      display: grid;
+      width: max-content;
+      margin-top: 10px;
+    }
+
+    .marker-cell {
+      min-height: 26px;
+      min-width: 58px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .marker-cell:first-child {
+      min-width: 80px;
+    }
+
+    .marker-dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 999px;
+      background: var(--neon-green);
+      box-shadow:
+        0 0 8px rgba(0, 245, 212, 0.9),
+        0 0 18px rgba(0, 245, 212, 0.38);
+    }
+
+    .marker-double {
+      display: flex;
+      gap: 5px;
+    }
+
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      margin-top: 16px;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(7, 21, 38, 0.7);
+      border: 1px solid rgba(120, 220, 255, 0.2);
+    }
+
+    .small-dot {
+      width: 14px;
+      height: 14px;
+      border-radius: 999px;
+      display: inline-block;
+    }
+
+    .dot-c,
+    .dot-root {
+      background: var(--neon-blue);
+      box-shadow: 0 0 10px rgba(0, 200, 255, 0.8);
+    }
+
+    .dot-highlight,
+    .dot-scale {
+      background: var(--neon-yellow);
+      box-shadow: 0 0 10px rgba(248, 243, 43, 0.8);
+    }
+
+    @media (max-width: 700px) {
+      body {
+        padding: 14px;
+      }
+
+      .controls {
+        justify-content: flex-start;
+      }
+
+      button,
+      select {
+        font-size: 0.85rem;
+      }
+
+      .fretboard-card {
+        padding: 14px;
+      }
+
+      .cell {
+        min-width: 54px;
+      }
+
+      .marker-cell {
+        min-width: 54px;
+      }
+
+      .string-label,
+      .marker-cell:first-child {
+        min-width: 72px;
+      }
+    }
+
+    @media print {
+      body {
+        background: white;
+        color: black;
+      }
+
+      .controls {
+        display: none;
+      }
+
+      .fretboard-card,
+      .info-box {
+        box-shadow: none;
+        background: white;
+        border-color: #999;
+      }
+
+      .cell,
+      .header-cell,
+      .string-label {
+        color: black;
+        background: white;
+      }
+
+      .note,
+      .note.root-c,
+      .note.highlight,
+      .note.scale-root {
+        background: white;
+        color: black;
+        border: 1px solid black;
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <h1>Fretboard Notes</h1>
+    <div class="subtitle">
+      Standard 6-string, 7-string Low B, and 7-string Low A fretboard note map
+    </div>
+  </header>
+
+  <main>
+    <div class="controls">
+      <div class="control-group" id="tuning-buttons">
+        <span class="control-label">Version:</span>
+        <button class="active" data-tuning="standard6">6-String Standard</button>
+        <button data-tuning="lowB7">7-String Low B</button>
+        <button data-tuning="lowA7">7-String Low A</button>
+      </div>
+
+      <div class="control-group">
+        <span class="control-label">Frets:</span>
+        <select id="fret-count">
+          <option value="12">0–12</option>
+          <option value="15">0–15</option>
+          <option value="17">0–17</option>
+          <option value="24" selected="">0–24</option>
+        </select>
+      </div>
+
+      <div class="control-group">
+        <span class="control-label">Accidentals:</span>
+        <button class="active" id="sharp-btn">Sharps</button>
+        <button id="flat-btn">Flats</button>
+      </div>
+
+      <div class="control-group">
+        <span class="control-label">Highlight Type:</span>
+        <select id="highlight-type">
+          <option value="none">None</option>
+          <option value="single">Single Note</option>
+          <option value="scale">Scale / Mode</option>
+        </select>
+      </div>
+
+      <div class="control-group" id="single-note-group" style="display: none;">
+        <span class="control-label">Note:</span>
+        <select id="highlight-note">
+          <option value="0">C</option>
+          <option value="1">C# / Db</option>
+          <option value="2">D</option>
+          <option value="3">D# / Eb</option>
+          <option value="4">E</option>
+          <option value="5">F</option>
+          <option value="6">F# / Gb</option>
+          <option value="7">G</option>
+          <option value="8">G# / Ab</option>
+          <option value="9">A</option>
+          <option value="10">A# / Bb</option>
+          <option value="11">B</option>
+        </select>
+      </div>
+
+      <div class="control-group" id="scale-root-group" style="display: none;">
+        <span class="control-label">Root:</span>
+        <select id="scale-root">
+          <option value="0">C</option>
+          <option value="1">C# / Db</option>
+          <option value="2">D</option>
+          <option value="3">D# / Eb</option>
+          <option value="4">E</option>
+          <option value="5">F</option>
+          <option value="6">F# / Gb</option>
+          <option value="7">G</option>
+          <option value="8">G# / Ab</option>
+          <option value="9">A</option>
+          <option value="10">A# / Bb</option>
+          <option value="11">B</option>
+        </select>
+      </div>
+
+      <div class="control-group" id="scale-type-group" style="display: none;">
+        <span class="control-label">Scale / Mode:</span>
+        <select id="scale-type">
+          <optgroup label="Scales">
+            <option value="major">Major</option>
+            <option value="naturalMinor">Natural Minor</option>
+            <option value="diminishedWholeHalf">Diminished Whole-Half</option>
+            <option value="diminishedHalfWhole">Diminished Half-Whole</option>
+          </optgroup>
+          <optgroup label="Modes">
+            <option value="ionian">Ionian</option>
+            <option value="dorian">Dorian</option>
+            <option value="phrygian">Phrygian</option>
+            <option value="lydian">Lydian</option>
+            <option value="mixolydian">Mixolydian</option>
+            <option value="aeolian">Aeolian</option>
+            <option value="locrian">Locrian</option>
+          </optgroup>
+        </select>
+      </div>
+    </div>
+
+    <div class="info-box" id="info-box"></div>
+
+    <section class="fretboard-card">
+      <div class="fretboard-title-row">
+        <h2 id="board-title"></h2>
+        <div class="tuning-text" id="tuning-text"></div>
+      </div>
+
+      <div class="scroll-hint">
+        If you cannot see fret 24, scroll horizontally or drag the scrollbar below the fretboard.
+      </div>
+
+      <div class="fretboard-scroll">
+        <div id="fretboard" class="fretboard"></div>
+        <div id="fret-markers" class="fret-marker-row"></div>
+      </div>
+
+      <div class="legend">
+        <div class="legend-item">
+          <span class="small-dot dot-c"></span>
+          C notes / scale root
+        </div>
+        <div class="legend-item">
+          <span class="small-dot dot-highlight"></span>
+          Selected note / scale tones
+        </div>
+        <div class="legend-item">
+          Open strings are fret 0
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const tunings = {
+      standard6: {
+        title: "6-String Standard",
+        description: "Standard six-string guitar tuning.",
+        stringsLowToHigh: ["E", "A", "D", "G", "B", "E"]
+      },
+      lowB7: {
+        title: "7-String Low B",
+        description: "Seven-string guitar with Low B plus standard six strings.",
+        stringsLowToHigh: ["B", "E", "A", "D", "G", "B", "E"]
+      },
+      lowA7: {
+        title: "7-String Low A",
+        description: "Seven-string guitar with Low A plus standard six strings.",
+        stringsLowToHigh: ["A", "E", "A", "D", "G", "B", "E"]
+      }
+    };
+
+    const sharpNotes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"];
+    const flatNotes = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"];
+
+    const noteIndexes = {
+      "C": 0,
+      "C#": 1,
+      "Db": 1,
+      "D": 2,
+      "D#": 3,
+      "Eb": 3,
+      "E": 4,
+      "F": 5,
+      "F#": 6,
+      "Gb": 6,
+      "G": 7,
+      "G#": 8,
+      "Ab": 8,
+      "A": 9,
+      "A#": 10,
+      "Bb": 10,
+      "B": 11
+    };
+
+    const scalePatterns = {
+      major: {
+        name: "Major",
+        intervals: [0, 2, 4, 5, 7, 9, 11]
+      },
+      naturalMinor: {
+        name: "Natural Minor",
+        intervals: [0, 2, 3, 5, 7, 8, 10]
+      },
+      diminishedWholeHalf: {
+        name: "Diminished Whole-Half",
+        intervals: [0, 2, 3, 5, 6, 8, 9, 11]
+      },
+      diminishedHalfWhole: {
+        name: "Diminished Half-Whole",
+        intervals: [0, 1, 3, 4, 6, 7, 9, 10]
+      },
+      ionian: {
+        name: "Ionian",
+        intervals: [0, 2, 4, 5, 7, 9, 11]
+      },
+      dorian: {
+        name: "Dorian",
+        intervals: [0, 2, 3, 5, 7, 9, 10]
+      },
+      phrygian: {
+        name: "Phrygian",
+        intervals: [0, 1, 3, 5, 7, 8, 10]
+      },
+      lydian: {
+        name: "Lydian",
+        intervals: [0, 2, 4, 6, 7, 9, 11]
+      },
+      mixolydian: {
+        name: "Mixolydian",
+        intervals: [0, 2, 4, 5, 7, 9, 10]
+      },
+      aeolian: {
+        name: "Aeolian",
+        intervals: [0, 2, 3, 5, 7, 8, 10]
+      },
+      locrian: {
+        name: "Locrian",
+        intervals: [0, 1, 3, 5, 6, 8, 10]
+      }
+    };
+
+    const fretMarkers = [3, 5, 7, 9, 12, 15, 17, 19, 21, 24];
+
+    let currentTuning = "standard6";
+    let useFlats = false;
+
+    const fretboardEl = document.getElementById("fretboard");
+    const markersEl = document.getElementById("fret-markers");
+    const boardTitleEl = document.getElementById("board-title");
+    const tuningTextEl = document.getElementById("tuning-text");
+    const infoBoxEl = document.getElementById("info-box");
+    const fretCountEl = document.getElementById("fret-count");
+
+    const highlightTypeEl = document.getElementById("highlight-type");
+    const highlightNoteEl = document.getElementById("highlight-note");
+    const singleNoteGroupEl = document.getElementById("single-note-group");
+    const scaleRootGroupEl = document.getElementById("scale-root-group");
+    const scaleTypeGroupEl = document.getElementById("scale-type-group");
+    const scaleRootEl = document.getElementById("scale-root");
+    const scaleTypeEl = document.getElementById("scale-type");
+
+    const sharpBtn = document.getElementById("sharp-btn");
+    const flatBtn = document.getElementById("flat-btn");
+
+    function getNoteName(openNote, fret) {
+      const noteSet = useFlats ? flatNotes : sharpNotes;
+      const openIndex = noteIndexes[openNote];
+      const noteIndex = (openIndex + fret) % 12;
+      return noteSet[noteIndex];
+    }
+
+    function getNoteIndex(openNote, fret) {
+      const openIndex = noteIndexes[openNote];
+      return (openIndex + fret) % 12;
+    }
+
+    function getDisplayRootName(rootIndex) {
+      const noteSet = useFlats ? flatNotes : sharpNotes;
+      return noteSet[rootIndex];
+    }
+
+    function getCurrentScaleIndexes() {
+      const rootIndex = Number(scaleRootEl.value);
+      const scaleKey = scaleTypeEl.value;
+      const pattern = scalePatterns[scaleKey].intervals;
+
+      return new Set(pattern.map(interval => (rootIndex + interval) % 12));
+    }
+
+    function getHighlightClass(noteIndex) {
+      const highlightType = highlightTypeEl.value;
+
+      if (highlightType === "none") {
+        return "";
+      }
+
+      if (highlightType === "single") {
+        const selectedIndex = Number(highlightNoteEl.value);
+        return noteIndex === selectedIndex ? "highlight" : "";
+      }
+
+      if (highlightType === "scale") {
+        const rootIndex = Number(scaleRootEl.value);
+        const scaleIndexes = getCurrentScaleIndexes();
+
+        if (noteIndex === rootIndex) {
+          return "scale-root";
+        }
+
+        if (scaleIndexes.has(noteIndex)) {
+          return "highlight";
+        }
+
+        return "";
+      }
+
+      return "";
+    }
+
+    function isC(noteIndex) {
+      return noteIndex === 0;
+    }
+
+    function updateHighlightControls() {
+      const type = highlightTypeEl.value;
+
+      singleNoteGroupEl.style.display = type === "single" ? "flex" : "none";
+      scaleRootGroupEl.style.display = type === "scale" ? "flex" : "none";
+      scaleTypeGroupEl.style.display = type === "scale" ? "flex" : "none";
+
+      renderFretboard();
+    }
+
+    function getHighlightInfoText() {
+      const type = highlightTypeEl.value;
+
+      if (type === "none") {
+        return "Highlight: <strong>None</strong>.";
+      }
+
+      if (type === "single") {
+        const selectedIndex = Number(highlightNoteEl.value);
+        const noteName = getDisplayRootName(selectedIndex);
+
+        return `Highlight: <strong>${noteName} notes</strong>.`;
+      }
+
+      if (type === "scale") {
+        const rootIndex = Number(scaleRootEl.value);
+        const rootName = getDisplayRootName(rootIndex);
+        const scaleKey = scaleTypeEl.value;
+        const scaleName = scalePatterns[scaleKey].name;
+        const scaleIndexes = Array.from(getCurrentScaleIndexes());
+        const noteSet = useFlats ? flatNotes : sharpNotes;
+        const scaleNoteNames = scaleIndexes
+          .sort((a, b) => a - b)
+          .map(index => noteSet[index])
+          .join(" ");
+
+        return `
+          Highlight: <strong>${rootName} ${scaleName}</strong>.<br>
+          Scale notes: <strong>${scaleNoteNames}</strong>.
+        `;
+      }
+
+      return "";
+    }
+
+    function renderFretboard() {
+      const tuning = tunings[currentTuning];
+      const maxFret = Number(fretCountEl.value);
+      const strings = tuning.stringsLowToHigh;
+
+      boardTitleEl.textContent = tuning.title;
+      tuningTextEl.innerHTML = `Tuning low to high: <strong>${strings.join(" ")}</strong>`;
+
+      infoBoxEl.innerHTML = `
+        <strong>${tuning.title}</strong><br>
+        ${tuning.description}<br>
+        Showing frets <strong>0 to ${maxFret}</strong>.
+        Accidentals: <strong>${useFlats ? "Flats" : "Sharps"}</strong>.<br>
+        ${getHighlightInfoText()}
+      `;
+
+      fretboardEl.style.gridTemplateColumns = `80px repeat(${maxFret + 1}, 58px)`;
+      markersEl.style.gridTemplateColumns = `80px repeat(${maxFret + 1}, 58px)`;
+
+      fretboardEl.innerHTML = "";
+      markersEl.innerHTML = "";
+
+      const blankHeader = document.createElement("div");
+      blankHeader.className = "cell header-cell";
+      blankHeader.textContent = "String";
+      fretboardEl.appendChild(blankHeader);
+
+      for (let fret = 0; fret <= maxFret; fret++) {
+        const headerCell = document.createElement("div");
+        headerCell.className = "cell header-cell";
+        headerCell.textContent = fret === 0 ? "Open" : fret;
+
+        if (fret === 0) {
+          headerCell.classList.add("open-label");
+        }
+
+        fretboardEl.appendChild(headerCell);
+      }
+
+      strings.slice().reverse().forEach((openNote, index) => {
+        const stringNumber = strings.length - index;
+
+        const label = document.createElement("div");
+        label.className = "cell string-label";
+        label.innerHTML = `${stringNumber}<br>${openNote}`;
+        fretboardEl.appendChild(label);
+
+        for (let fret = 0; fret <= maxFret; fret++) {
+          const noteName = getNoteName(openNote, fret);
+          const noteIndex = getNoteIndex(openNote, fret);
+
+          const cell = document.createElement("div");
+          cell.className = "cell";
+
+          const note = document.createElement("span");
+          note.className = "note";
+          note.textContent = noteName;
+          note.dataset.noteIndex = String(noteIndex);
+
+          if (isC(noteIndex)) {
+            note.classList.add("root-c");
+          }
+
+          const highlightClass = getHighlightClass(noteIndex);
+          if (highlightClass) {
+            note.classList.add(highlightClass);
+          }
+
+          cell.appendChild(note);
+          fretboardEl.appendChild(cell);
+        }
+      });
+
+      const emptyMarker = document.createElement("div");
+      emptyMarker.className = "marker-cell";
+      markersEl.appendChild(emptyMarker);
+
+      for (let fret = 0; fret <= maxFret; fret++) {
+        const markerCell = document.createElement("div");
+        markerCell.className = "marker-cell";
+
+        if (fretMarkers.includes(fret)) {
+          if (fret === 12 || fret === 24) {
+            markerCell.innerHTML = `
+              <span class="marker-double">
+                <span class="marker-dot"></span>
+                <span class="marker-dot"></span>
+              </span>
+            `;
+          } else {
+            markerCell.innerHTML = `<span class="marker-dot"></span>`;
+          }
+        }
+
+        markersEl.appendChild(markerCell);
+      }
+    }
+
+    document.getElementById("tuning-buttons").addEventListener("click", event => {
+      if (event.target.tagName !== "BUTTON") return;
+
+      document.querySelectorAll("#tuning-buttons button").forEach(button => {
+        button.classList.remove("active");
+      });
+
+      event.target.classList.add("active");
+      currentTuning = event.target.dataset.tuning;
+      renderFretboard();
+    });
+
+    sharpBtn.addEventListener("click", () => {
+      useFlats = false;
+      sharpBtn.classList.add("active");
+      flatBtn.classList.remove("active");
+      renderFretboard();
+    });
+
+    flatBtn.addEventListener("click", () => {
+      useFlats = true;
+      flatBtn.classList.add("active");
+      sharpBtn.classList.remove("active");
+      renderFretboard();
+    });
+
+    fretCountEl.addEventListener("change", renderFretboard);
+    highlightTypeEl.addEventListener("change", updateHighlightControls);
+    highlightNoteEl.addEventListener("change", renderFretboard);
+    scaleRootEl.addEventListener("change", renderFretboard);
+    scaleTypeEl.addEventListener("change", renderFretboard);
+
+    updateHighlightControls();
+    renderFretboard();
+  </script>
+
+</body></html>
